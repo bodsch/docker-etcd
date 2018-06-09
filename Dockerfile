@@ -20,8 +20,8 @@ RUN \
   go get github.com/coreos/etcd || true && \
   cd ${GOPATH}/src/github.com/coreos/etcd && \
   if [ "${BUILD_TYPE}" == "stable" ] ; then \
-    echo "switch to stable Tag ${ETCD_VERSION}" && \
-    git checkout tags/${ETCD_VERSION} 2> /dev/null ; \
+    echo "switch to stable Tag v${ETCD_VERSION}" && \
+    git checkout tags/v${ETCD_VERSION} 2> /dev/null ; \
   fi
 
 RUN \

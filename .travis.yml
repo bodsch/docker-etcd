@@ -6,7 +6,7 @@ services:
 
 env:
   global:
-    - ETCD_VERSION=${ETCD_VERSION:-v3.3.7}
+    - ETCD_VERSION=${ETCD_VERSION:-3.3.7}
     - BUILD_DATE=$(date +%Y-%m-%d)
     - BUILD_DATE=$(date +%y%m)
 
