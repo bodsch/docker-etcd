@@ -1,0 +1,23 @@
+
+group: edge
+
+services:
+  - docker
+
+env:
+  global:
+    - ETCD_VERSION=${ETC:-v3.3.7}
+    - BUILD_DATE=$(date +%Y-%m-%d)
+    - BUILD_DATE=$(date +%y%m)
+
+jobs:
+  include:
+    - stage: build docker image
+      script:
+        - make
+#    - stage: test images & upload
+#      script:
+#        - make
+#        - docker-compose --file docker-compose_example.yml up --build -d
+#        - docker-compose --file docker-compose_example.yml kill
+#        - docker-compose --file docker-compose_example.yml down
