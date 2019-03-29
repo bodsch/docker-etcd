@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Custom build for Docker Hub
+# see: https://medium.com/microscaling-systems/labelling-automated-builds-on-docker-hub-f3d073fb8e1
+
+[[ -e hooks/environment ]] && . hooks/environment
+
+cat << EOF > .env
+BUILD_DATE=${BUILD_DATE}
+BUILD_VERSION=${BUILD_VERSION}
+BUILD_TYPE=${BUILD_TYPE}
+
+ETCD_VERSION=${ETCD_VERSION}
+
+EOF
+
+
+docker-compose \
+  --file compose/head.yml \
+  --file compose/etcd.yml \
+  config > docker-compose.yml

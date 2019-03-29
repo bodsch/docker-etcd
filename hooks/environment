@@ -1,0 +1,8 @@
+
+PORTS="
+  --publish 2379:2379/tcp
+  --publish 2380:2380/tcp"
+
+VOLUMES=""
+
+ENV=""

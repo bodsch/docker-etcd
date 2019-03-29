@@ -6,18 +6,39 @@ services:
 
 env:
   global:
-    - ETCD_VERSION=${ETCD_VERSION:-3.3.7}
+    - ETCD_VERSION=${ETCD_VERSION:-3.3.12}
     - BUILD_DATE=$(date +%Y-%m-%d)
-    - BUILD_DATE=$(date +%y%m)
+    - BUILD_VERSION=$(date +%y%m)
+    - BUILD_TYPE=stable
 
 jobs:
   include:
     - stage: build docker image
       script:
         - make
-#    - stage: test images & upload
-#      script:
-#        - make
-#        - docker-compose --file docker-compose_example.yml up --build -d
-#        - docker-compose --file docker-compose_example.yml kill
-#        - docker-compose --file docker-compose_example.yml down
+
+    - stage: test images
+      script:
+        - make
+        - make compose-file
+        - docker-compose up --build -d
+        - make test
+        - docker-compose kill
+        - docker-compose down
+
+    - stage: push latest docker image
+      script:
+        - make
+        - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+        - docker tag  ${USER}/etcd:latest ${DOCKER_USERNAME}/docker-etcd:latest
+        - docker push ${DOCKER_USERNAME}/docker-etcd:latest
+        - docker logout
+
+    - stage: push version docker image
+      if: branch = master
+      script:
+        - make
+        - docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}"
+        - docker tag  ${USER}/etcd:latest ${DOCKER_USERNAME}/docker-etcd:${CONSUL_VERSION}
+        - docker push ${DOCKER_USERNAME}/docker-etcd:${CONSUL_VERSION}
+        - docker logout

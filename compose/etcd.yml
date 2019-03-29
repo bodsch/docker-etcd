@@ -1,0 +1,18 @@
+---
+version: '3.3'
+
+services:
+
+  etcd:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        - BUILD_TYPE
+        - ETCD_VERSION
+    container_name: etcd
+    hostname: etcd
+    ports:
+      - 2379:2379
+      - 2380:2380
+    command: "--data-dir /data --listen-client-urls http://0.0.0.0:2379 --advertise-client-urls http://0.0.0.0:2380"

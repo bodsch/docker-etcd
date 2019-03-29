@@ -1,100 +1,45 @@
+export GIT_SHA1          := $(shell git rev-parse --short HEAD)
+export DOCKER_IMAGE_NAME := etcd
+export DOCKER_NAME_SPACE := ${USER}
+export DOCKER_VERSION    ?= latest
+export BUILD_DATE        := $(shell date +%Y-%m-%d)
+export BUILD_VERSION     := $(shell date +%y%m)
+export BUILD_TYPE        ?= stable
+export ETCD_VERSION      ?= 3.3.12
 
-include env_make
 
-NS       = bodsch
-VERSION ?= latest
-
-REPO     = docker-etcd
-NAME     = etcd
-INSTANCE = default
-
-BUILD_DATE     := $(shell date +%Y-%m-%d)
-BUILD_VERSION  := $(shell date +%y%m)
-BUILD_TYPE     ?= "stable"
-ETCD_VERSION   ?= "v3.3.7"
-
-.PHONY: build push shell run start stop rm release
+.PHONY: build shell run exec start stop clean compose-file
 
 default: build
 
-params:
-	@echo ""
-	@echo " ETCD_VERSION : ${ETCD_VERSION}"
-	@echo " BUILD_DATE   : $(BUILD_DATE)"
-	@echo ""
-
-build: params
-	docker build \
-		--rm \
-		--compress \
-		--build-arg BUILD_DATE=$(BUILD_DATE) \
-		--build-arg BUILD_VERSION=$(BUILD_VERSION) \
-		--build-arg BUILD_TYPE=$(BUILD_TYPE) \
-		--build-arg ETCD_VERSION=${ETCD_VERSION} \
-		--tag $(NS)/$(REPO):$(ETCD_VERSION) .
-
-history:
-	docker history \
-		$(NS)/$(REPO):$(ETCD_VERSION)
-
-push:
-	docker push \
-		$(NS)/$(REPO):$(ETCD_VERSION)
+build:
+	@hooks/build
 
 shell:
-	docker run \
-		--rm \
-		--name $(NAME)-$(INSTANCE) \
-		--interactive \
-		--tty \
-		--entrypoint "" \
-		$(PORTS) \
-		$(VOLUMES) \
-		$(ENV) \
-		$(NS)/$(REPO):$(ETCD_VERSION) \
-		/bin/sh
+	@hooks/shell
 
 run:
-	docker run \
-		--rm \
-		--name $(NAME)-$(INSTANCE) \
-		$(PORTS) \
-		$(VOLUMES) \
-		$(ENV) \
-		$(NS)/$(REPO):$(ETCD_VERSION)
+	@hooks/run
 
 exec:
-	docker exec \
-		--interactive \
-		--tty \
-		$(NAME)-$(INSTANCE) \
-		/bin/sh
+	@hooks/exec
 
 start:
-	docker run \
-		--detach \
-		--name $(NAME)-$(INSTANCE) \
-		$(PORTS) \
-		$(VOLUMES) \
-		$(ENV) \
-		$(NS)/$(REPO):$(ETCD_VERSION)
+	@hooks/start
 
 stop:
-	docker stop \
-		$(NAME)-$(INSTANCE)
+	@hooks/stop
 
 clean:
-	docker rmi -f `docker images -q ${NS}/${REPO} | uniq`
+	@hooks/clean
 
-#
-# List all images
-#
-list:
-	-docker images $(NS)/$(REPO)*
+compose-file:
+	@hooks/compose-file
 
-release: build
-	make push -e VERSION=$(ETCD_VERSION)
+linter:
+	@tests/linter.sh
 
-publish:
-	# amd64 / community / cpy3
-	docker push $(NS)/$(REPO):$(ETCD_VERSION)
+integration_test:
+	@tests/integration_test.sh
+
+test: linter integration_test
