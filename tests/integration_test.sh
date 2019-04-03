@@ -28,7 +28,7 @@ wait_for_service() {
 }
 
 
-api_request() {
+cluster_state() {
 
   node=$1
 
@@ -55,10 +55,85 @@ api_request() {
 
   else
     echo "etcd cluster are unhealty "
-    echo ${code}
+    echo "'${code}' - '${health}'"
   fi
 }
 
+
+use_key_value() {
+
+  local key="message"
+  local value1="Hello world"
+  local value2="Hello etcd"
+
+  echo -e "\nSetting the value of a key"
+  curl \
+    --silent \
+    --request PUT \
+    --data value="${value1}" \
+    "http://127.0.0.1:2379/v2/keys/${key}"
+
+  echo -e "\nGet the value of a key"
+  curl \
+    --silent \
+    "http://127.0.0.1:2379/v2/keys/${key}"
+
+  echo -e "\nChanging the value of a key"
+  curl \
+    --silent \
+    --request PUT \
+    --data value="${value2}" \
+    "http://127.0.0.1:2379/v2/keys/${key}"
+
+  echo -e "\nVerify the value of a key"
+  curl \
+    --silent \
+    "http://127.0.0.1:2379/v2/keys/${key}"
+
+  echo -e "\nDeleting a key"
+  curl \
+    --silent \
+    --request DELETE \
+    "http://127.0.0.1:2379/v2/keys/${key}"
+
+  echo -e "\nusing key TTL"
+  curl \
+    --silent \
+    --request PUT \
+    --data value="${value1}" \
+    --data ttl=5 \
+    "http://127.0.0.1:2379/v2/keys/${key}"
+
+  echo -e "\nAtomically Creating In-Order Keys"
+  curl \
+    --silent \
+    --request PUT \
+    --data value=Job1 \
+    http://127.0.0.1:2379/v2/keys/queue
+
+  curl \
+    --silent \
+    --request PUT \
+    --data value=Job2 \
+    http://127.0.0.1:2379/v2/keys/queue
+
+  curl \
+    --silent \
+    "http://127.0.0.1:2379/v2/keys/queue?recursive=true&sorted=true"
+
+  echo -e "\nlist directory"
+  curl \
+    --silent \
+    http://127.0.0.1:2379/v2/keys/
+
+  echo -e "\nupload file"
+  curl \
+    --silent \
+    --request PUT \
+    --data-urlencode value@integration_test.sh \
+    http://127.0.0.1:2379/v2/keys/
+
+}
 
 inspect() {
 
@@ -76,7 +151,8 @@ inspect() {
 
 inspect
 wait_for_service
-api_request
+cluster_state
+use_key_value
 
 exit 0
 

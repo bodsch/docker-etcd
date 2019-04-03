@@ -25,12 +25,12 @@ RUN \
 # hadolint ignore=
 RUN \
   echo "get sources ..." && \
-  go get github.com/coreos/etcd
+  go get github.com/etcd-io/etcd
 
-WORKDIR ${GOPATH}/src/github.com/coreos/etcd
+WORKDIR ${GOPATH}/src/github.com/etcd-io/etcd
 
 RUN \
-  if [ "${BUILD_TYPE}" == "stable" ] ; then \
+  if [ "${BUILD_TYPE}" = "stable" ] ; then \
     echo "switch to stable Tag v${ETCD_VERSION}" && \
     git checkout "tags/v${ETCD_VERSION}" 2> /dev/null ; \
   fi
@@ -80,16 +80,20 @@ RUN \
   rm -rf \
     /tmp/* \
     /src/* \
-    /var/cache/apk/
+    /var/cache/apk/ && \
+  for p in HTTP_PROXY HTTPS_PROXY NO_PROXY http_proxy https_proxy no_proxy ; \
+  do  \
+    unset "${p}" ; \
+  done
 
 COPY --from=builder /usr/bin/etcd* /usr/bin/
 COPY --from=builder /etc/etcd.conf.yml.sample /etc/
+COPY rootfs/ /
 
 VOLUME ["/etc","/data"]
 
-ENTRYPOINT ["/usr/bin/etcd"]
-
-CMD ["--data-dir", "/data", "--listen-client-urls 'http://0.0.0.0:2379'", "--advertise-client-urls 'http://0.0.0.0:2380'"]
+#ENTRYPOINT ["/usr/bin/etcd"]
+#CMD ["--data-dir", "/data", "--listen-client-urls 'http://0.0.0.0:2379'", "--advertise-client-urls 'http://0.0.0.0:2380'"]
 
 EXPOSE 2379 2380
 
