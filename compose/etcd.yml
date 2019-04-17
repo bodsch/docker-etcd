@@ -1,5 +1,5 @@
 ---
-version: '3.3'
+version: '2.1'
 
 services:
 
@@ -15,4 +15,46 @@ services:
     ports:
       - 2379:2379
       - 2380:2380
-    # command: "--data-dir /data --listen-client-urls http://0.0.0.0:2379 --advertise-client-urls http://0.0.0.0:2380"
+    command: >
+      --name etcd
+      --data-dir /data
+      --initial-advertise-peer-urls http://192.168.10.10:2380
+      --listen-peer-urls http://192.168.10.10:2380
+      --listen-client-urls http://192.168.10.10:2379,http://127.0.0.1:2379
+      --advertise-client-urls http://192.168.10.10:2379
+      --initial-cluster-token etcd-cluster-1
+      --initial-cluster etcd=http://192.168.10.10:2380,node1=http://192.168.10.20:2380
+      --initial-cluster-state new
+    networks:
+      etcd:
+        ipv4_address: 192.168.10.10
+
+  node1:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        - BUILD_TYPE
+        - ETCD_VERSION
+    container_name: node1
+    hostname: node1
+    ports:
+      - 2379
+      - 2380
+    depends_on:
+      - etcd
+    links:
+      - etcd
+    command: >
+      --name node1
+      --data-dir /data
+      --initial-advertise-peer-urls http://192.168.10.20:2380
+      --listen-peer-urls http://192.168.10.20:2380
+      --listen-client-urls http://192.168.10.20:2379,http://127.0.0.1:2379
+      --advertise-client-urls http://192.168.10.20:2379
+      --initial-cluster-token etcd-cluster-1
+      --initial-cluster node1=http://192.168.10.20:2380,etcd=http://192.168.10.10:2380
+      --initial-cluster-state new
+    networks:
+      etcd:
+        ipv4_address: 192.168.10.20

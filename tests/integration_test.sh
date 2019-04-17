@@ -42,7 +42,6 @@ cluster_state() {
   then
     echo -e "etcd cluster are healthy\n"
 
-
     code=$(curl \
       --silent \
       --location\
@@ -53,12 +52,20 @@ cluster_state() {
 
     echo -e "version of etcd server ${etcd_server} and etcd cluster ${etcd_cluster}\n"
 
+    curl \
+      --silent \
+      --location\
+      http://127.0.0.1:2379/v2/members | jq
+
   else
     echo "etcd cluster are unhealty "
     echo "'${code}' - '${health}'"
   fi
 }
 
+random_string() {
+  < /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c${1:-128} ; echo
+}
 
 use_key_value() {
 
@@ -71,30 +78,30 @@ use_key_value() {
     --silent \
     --request PUT \
     --data value="${value1}" \
-    "http://127.0.0.1:2379/v2/keys/${key}"
+    "http://127.0.0.1:2379/v2/keys/${key}" | jq
 
   echo -e "\nGet the value of a key"
   curl \
     --silent \
-    "http://127.0.0.1:2379/v2/keys/${key}"
+    "http://127.0.0.1:2379/v2/keys/${key}" | jq
 
   echo -e "\nChanging the value of a key"
   curl \
     --silent \
     --request PUT \
     --data value="${value2}" \
-    "http://127.0.0.1:2379/v2/keys/${key}"
+    "http://127.0.0.1:2379/v2/keys/${key}" | jq
 
   echo -e "\nVerify the value of a key"
   curl \
     --silent \
-    "http://127.0.0.1:2379/v2/keys/${key}"
+    "http://127.0.0.1:2379/v2/keys/${key}" | jq
 
   echo -e "\nDeleting a key"
   curl \
     --silent \
     --request DELETE \
-    "http://127.0.0.1:2379/v2/keys/${key}"
+    "http://127.0.0.1:2379/v2/keys/${key}" | jq
 
   echo -e "\nusing key TTL"
   curl \
@@ -102,37 +109,62 @@ use_key_value() {
     --request PUT \
     --data value="${value1}" \
     --data ttl=5 \
-    "http://127.0.0.1:2379/v2/keys/${key}"
+    "http://127.0.0.1:2379/v2/keys/${key}" | jq
 
   echo -e "\nAtomically Creating In-Order Keys"
   curl \
     --silent \
     --request PUT \
     --data value=Job1 \
-    http://127.0.0.1:2379/v2/keys/queue
+    http://127.0.0.1:2379/v2/keys/queue | jq
 
   curl \
     --silent \
     --request PUT \
     --data value=Job2 \
-    http://127.0.0.1:2379/v2/keys/queue
+    http://127.0.0.1:2379/v2/keys/queue | jq
 
   curl \
     --silent \
-    "http://127.0.0.1:2379/v2/keys/queue?recursive=true&sorted=true"
+    "http://127.0.0.1:2379/v2/keys/queue?recursive=true&sorted=true" | jq
 
   echo -e "\nlist directory"
   curl \
     --silent \
-    http://127.0.0.1:2379/v2/keys/
+    http://127.0.0.1:2379/v2/keys/ | jq
+
+  test_file="/tmp/etcd_teststring_$(date +%Y%m%d_%H%M)"
+
+  random_string  > ${test_file}
+  random_string >> ${test_file}
+  random_string >> ${test_file}
+
+  CHECKSUM_1=$(md5sum ${test_file})
 
   echo -e "\nupload file"
   curl \
     --silent \
     --request PUT \
-    --data-urlencode value@integration_test.sh \
-    http://127.0.0.1:2379/v2/keys/
+    --data-urlencode value@${test_file} \
+    http://127.0.0.1:2379/v2/keys/integration_test | jq
 
+  echo -e "\ndownload file"
+  data=$(curl \
+    --silent \
+    http://127.0.0.1:2379/v2/keys/integration_test)
+
+  echo "${data}" | jq
+
+  # remove trailing newline from string
+  echo "${data}" | jq --raw-output '.node.value' | head -c -1  > ${test_file}_saved
+
+  CHECKSUM_2=$(md5sum ${test_file}_saved)
+
+  echo -e "\nverify"
+  echo -e "$(cat ${test_file}) - ${CHECKSUM_1}"
+  echo -e "\n$(cat ${test_file}_saved) - ${CHECKSUM_2}"
+
+  rm -f /tmp/etcd_teststring*
 }
 
 inspect() {

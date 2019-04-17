@@ -22,7 +22,6 @@ RUN \
     git \
     make
 
-# hadolint ignore=
 RUN \
   echo "get sources ..." && \
   go get github.com/etcd-io/etcd
@@ -54,6 +53,8 @@ RUN \
   echo "export ETCD_VERSION=${ETCD_VERSION}" >> /etc/profile.d/etcd.sh && \
   apk update  --quiet --no-cache && \
   apk upgrade --quiet --no-cache && \
+  apk add     --quiet --no-cache \
+    curl && \
   apk add     --quiet --no-cache --virtual .build-deps \
     shadow \
     tzdata && \
@@ -88,12 +89,11 @@ RUN \
 
 COPY --from=builder /usr/bin/etcd* /usr/bin/
 COPY --from=builder /etc/etcd.conf.yml.sample /etc/
-COPY rootfs/ /
 
 VOLUME ["/etc","/data"]
 
-#ENTRYPOINT ["/usr/bin/etcd"]
-#CMD ["--data-dir", "/data", "--listen-client-urls 'http://0.0.0.0:2379'", "--advertise-client-urls 'http://0.0.0.0:2380'"]
+ENTRYPOINT ["/usr/bin/etcd"]
+CMD ["--help"]
 
 EXPOSE 2379 2380
 
@@ -102,7 +102,7 @@ HEALTHCHECK \
   --timeout=2s \
   --retries=12 \
   --start-period=10s \
-  CMD ps ax | grep -v grep | grep -c etcd || exit 1
+  CMD curl --silent --fail localhost:2379/health || exit 1
 
 # ---------------------------------------------------------------------------------------
 
