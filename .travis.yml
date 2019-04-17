@@ -39,6 +39,6 @@ jobs:
       script:
         - make
         - docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}"
-        - docker tag  ${USER}/etcd:latest ${DOCKER_USERNAME}/docker-etcd:${CONSUL_VERSION}
-        - docker push ${DOCKER_USERNAME}/docker-etcd:${CONSUL_VERSION}
+        - docker tag  ${USER}/etcd:latest ${DOCKER_USERNAME}/docker-etcd:${ETCD_VERSION}
+        - docker push ${DOCKER_USERNAME}/docker-etcd:${ETCD_VERSION}
         - docker logout
