@@ -1,44 +1,38 @@
-
 group: edge
-
 services:
-  - docker
-
+- docker
 env:
   global:
-    - ETCD_VERSION=${ETCD_VERSION:-3.3.12}
-    - BUILD_DATE=$(date +%Y-%m-%d)
-    - BUILD_VERSION=$(date +%y%m)
-    - BUILD_TYPE=stable
-
+  - ETCD_VERSION=${ETCD_VERSION:-3.3.12}
+  - BUILD_DATE=$(date +%Y-%m-%d)
+  - BUILD_VERSION=$(date +%y%m)
+  - BUILD_TYPE=stable
+  - secure: PDGQzqj1mZNe+xSvpbzO+KAK8r47QUt7Rc9erWPy31eWvQCpIxOZG8dkr/t2Uk6+/2FpVevvWlq8BjRZTxMmAgZ9MByerBPX8dUMt7a0mCWqwm7y7FJRPmVG9OA5rhKZzocIpLmsM3eGlS9Nx5LbN/hUlXLeC4I1y0bPuJMrdJ6/cVyGOu4dIiL+EnJPc70AvcmUzu5aqPP1J39LQEpPcNEGZ4fRzrQbc5v/lxYYyAjZ679Tztc/lWypfDURXAmKO1ROXT+F6D6S2XQs2IzHlo+VNOa0QyH3pUqHsA5xC5tB3911D0sNY7XpF4F5z9fAc+mqatK1k6Rxjb5tu5hLWDwz6R6vJYPi2TnUDC6stqe7dp4JIOqicVpR1Nk+Hjp5+HMfmT3xijDqfniE1RZWts7C5bfcl0e5PILTWRp8Z4acH9Rwr4/ZVF+lfYUpc0aDBQGknZV9glAsTpCdPJVZOXcB2w+vVPCoUAQtijNpErkrLv+kzkt5qMrlADf96tW5cjF4HJw7Xb5tjq6RYZCyn8gj9TRnaMGq1lgmei5WvUKL3dmq3vAPqYPViHNS/RhG+iUDdHayijJ7tW3IUy7aGz0NUEHKHupv8FU74FLyMaGol8S424Qx/jWWWyjMJQxjFYXCDhb+ZYmw4KWip1KKnvWiSW4tuZqhGlT7yoHh+aU=
 jobs:
   include:
-    - stage: build docker image
-      script:
-        - make
-
-    - stage: test images
-      script:
-        - make
-        - make compose-file
-        - docker-compose up --build -d
-        - make test
-        - docker-compose kill
-        - docker-compose down
-
-    - stage: push latest docker image
-      script:
-        - make
-        - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
-        - docker tag  ${USER}/etcd:latest ${DOCKER_USERNAME}/docker-etcd:latest
-        - docker push ${DOCKER_USERNAME}/docker-etcd:latest
-        - docker logout
-
-    - stage: push version docker image
-      if: branch = master
-      script:
-        - make
-        - docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}"
-        - docker tag  ${USER}/etcd:latest ${DOCKER_USERNAME}/docker-etcd:${ETCD_VERSION}
-        - docker push ${DOCKER_USERNAME}/docker-etcd:${ETCD_VERSION}
-        - docker logout
+  - stage: build docker image
+    script:
+    - make
+  - stage: test images
+    script:
+    - make
+    - make compose-file
+    - docker-compose up --build -d
+    - make test
+    - docker-compose kill
+    - docker-compose down
+  - stage: push latest docker image
+    script:
+    - make
+    - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
+    - docker tag  ${USER}/etcd:latest ${DOCKER_USERNAME}/docker-etcd:latest
+    - docker push ${DOCKER_USERNAME}/docker-etcd:latest
+    - docker logout
+  - stage: push version docker image
+    if: branch = master
+    script:
+    - make
+    - docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}"
+    - docker tag  ${USER}/etcd:latest ${DOCKER_USERNAME}/docker-etcd:${ETCD_VERSION}
+    - docker push ${DOCKER_USERNAME}/docker-etcd:${ETCD_VERSION}
+    - docker logout
